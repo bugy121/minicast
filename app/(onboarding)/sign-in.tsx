@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,7 +16,7 @@ import {
 import { useAuth } from '@/providers/auth-provider';
 
 export default function SignInScreen() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signInWithApple, signInWithGoogle, signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
@@ -44,11 +45,36 @@ export default function SignInScreen() {
     }
   }
 
+  async function onGooglePress() {
+    setError(null);
+    setSuccessMessage(null);
+    setIsLoading(true);
+
+    const result = await signInWithGoogle();
+    setIsLoading(false);
+    setError(result.error);
+  }
+
+  async function onApplePress() {
+    setError(null);
+    setSuccessMessage(null);
+    setIsLoading(true);
+
+    const result = await signInWithApple();
+    setIsLoading(false);
+    setError(result.error);
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <View style={styles.container}>
-          <View style={styles.hero}>
+          <View>
+            <Image
+              contentFit="contain"
+              source={require('@/assets/images/logo_transparent_white.png')}
+              style={styles.logo}
+            />
             <Text style={styles.brand}>minicast</Text>
             <Text style={styles.headline}>Your world.</Text>
             <Text style={styles.headline}>Summarized.</Text>
@@ -95,6 +121,24 @@ export default function SignInScreen() {
               )}
             </Pressable>
 
+            <View style={styles.dividerRow}>
+              <View style={styles.divider} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.divider} />
+            </View>
+
+            <Pressable disabled={isLoading} onPress={onGooglePress} style={styles.socialButton}>
+              <Ionicons color="#FFF" name="logo-google" size={20} />
+              <Text style={styles.socialLabel}>Continue with Google</Text>
+            </Pressable>
+
+            {Platform.OS === 'ios' ? (
+              <Pressable disabled={isLoading} onPress={onApplePress} style={styles.socialButton}>
+                <Ionicons color="#FFF" name="logo-apple" size={20} />
+                <Text style={styles.socialLabel}>Continue with Apple</Text>
+              </Pressable>
+            ) : null}
+
             <Pressable
               disabled={isLoading}
               onPress={() => setIsCreatingAccount((value) => !value)}
@@ -136,48 +180,49 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
     paddingHorizontal: 22,
-    paddingVertical: 24,
+    paddingVertical: 12,
   },
-  hero: {
-    marginTop: 12,
+  logo: {
+    height: 84,
+    width: 150,
   },
   brand: {
     color: '#FFF',
-    fontSize: 44,
+    fontSize: 30,
     fontWeight: '300',
-    letterSpacing: 6,
-    marginBottom: 20,
+    letterSpacing: 5,
+    marginBottom: 10,
     textTransform: 'lowercase',
   },
   headline: {
     color: '#FFF',
-    fontSize: 44,
+    fontSize: 34,
     fontWeight: '800',
-    lineHeight: 48,
+    lineHeight: 38,
   },
   highlight: {
     color: '#E7C067',
   },
   subhead: {
     color: '#D0D0D0',
-    fontSize: 20,
-    lineHeight: 28,
-    marginTop: 18,
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 10,
     maxWidth: '95%',
   },
   featureRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
+    gap: 8,
+    marginTop: 14,
   },
   feature: {
     borderColor: '#1F1F1F',
     borderWidth: 1,
     borderRadius: 12,
     flex: 1,
-    minHeight: 104,
-    padding: 10,
-    rowGap: 4,
+    minHeight: 88,
+    padding: 8,
+    rowGap: 2,
   },
   featureTitle: {
     color: '#FFF',
@@ -186,12 +231,12 @@ const styles = StyleSheet.create({
   },
   featureSubtitle: {
     color: '#B0B0B0',
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 10,
+    lineHeight: 12,
   },
   form: {
-    marginTop: 28,
-    rowGap: 10,
+    marginTop: 14,
+    rowGap: 8,
   },
   input: {
     backgroundColor: '#111',
@@ -199,9 +244,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 15,
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   error: {
     color: '#FF7A7A',
@@ -216,12 +261,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E63FF',
     borderRadius: 12,
     justifyContent: 'center',
-    minHeight: 52,
-    marginTop: 6,
+    minHeight: 50,
+    marginTop: 4,
   },
   primaryButtonLabel: {
     color: '#FFF',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '500',
   },
   secondaryButton: {
@@ -231,5 +276,36 @@ const styles = StyleSheet.create({
   secondaryLabel: {
     color: '#A6C2FF',
     fontSize: 15,
+  },
+  dividerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginVertical: 4,
+  },
+  divider: {
+    backgroundColor: '#303030',
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    color: '#8F8F8F',
+    fontSize: 13,
+    letterSpacing: 1,
+  },
+  socialButton: {
+    alignItems: 'center',
+    borderColor: '#2D2D2D',
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'center',
+    minHeight: 48,
+  },
+  socialLabel: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
