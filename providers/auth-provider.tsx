@@ -17,6 +17,8 @@ type AuthContextValue = {
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signInWithApple: () => Promise<{ error: string | null }>;
+  /** Requires a Supabase Edge Function `delete-account` (or set EXPO_PUBLIC_DELETE_ACCOUNT_FUNCTION). */
+  deleteAccount: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 };
 
@@ -62,6 +64,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
 
         return signInWithOAuthProvider('apple');
+      },
+      async deleteAccount() {
+        const functionName = process.env.EXPO_PUBLIC_DELETE_ACCOUNT_FUNCTION ?? 'delete-account';
+        const { data, error } = await supabase.functions.invoke(functionName, { method: 'POST' });
+        if (error) {
+          return {
+            error:
+              error.message ||
+              'Could not delete account. Deploy a Supabase Edge Function that deletes the user, or remove the user in the Supabase dashboard.',
+          };
+        }
+        if (data && typeof data === 'object' && 'error' in data && data.error) {
+          return { error: String((data as { error: string }).error) };
+        }
+        await supabase.auth.signOut();
+        return { error: null };
       },
       async signOut() {
         await supabase.auth.signOut();
